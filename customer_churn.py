@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
+
 # 로지스틱 회귀 분석 모델
 # churn 부분 True와 False로 구성되어 있음
 # 새로운 churn01 컬럼 부분 생성 0.과 1.의 부분으로 구성되어 
@@ -15,9 +16,7 @@ import statsmodels.formula.api as smf
 
 # Read the data set into a pandas DataFrame
 churn = pd.read_csv('churn.csv', sep=',', header=0)
-
-churn.columns = [heading.lower() for heading in \
-churn.columns.str.replace(' ', '_').str.replace("\'", "").str.strip('?')]
+churn.columns = [heading.lower() for heading in churn.columns.str.replace(' ', '_').str.replace("\'", "").str.strip('?')]
 
 churn['churn01'] = np.where(churn['churn'] == 'True.', 1., 0.) 
 #chrun으로 되어있으면 아니면 0으로 해라 로지스틱 회귀분석은 숫자.  0또는 1로 바꿔야됨 False True는 계산이안됨 False 는 0이됨.
@@ -25,11 +24,14 @@ print(churn.head())
 print(churn.describe())
 print(churn.info())
 
+
 # Calculate descriptive statistics for grouped data
 print(churn.groupby(['churn'])[['day_charge', 'eve_charge', 'night_charge', 'intl_charge', 'account_length', 'custserv_calls']].agg(['count', 'mean', 'std']))
 #aggligation
 
-'''
+
+
+# 변수별로 서로 다른 통계량 구하기
 # Specify different statistics for different variables
 print(churn.groupby(['churn']).agg({'day_charge' : ['mean', 'std'], 
 				'eve_charge' : ['mean', 'std'],
@@ -37,7 +39,7 @@ print(churn.groupby(['churn']).agg({'day_charge' : ['mean', 'std'],
 				'intl_charge' : ['mean', 'std'],
 				'account_length' : ['count', 'min', 'max'],
 				'custserv_calls' : ['count', 'min', 'max']}))
-'''
+
 # Create total_charges, split it into 5 groups, and
 # calculate statistics for each of the groups
 
@@ -83,12 +85,60 @@ print(churn.pivot_table(['total_charges'], index=['custserv_calls'], columns=['c
 						aggfunc='mean', fill_value='NaN', margins=True))
 '''
 # Fit a logistic regression model
+
+my_formula = 'churn01 ~ account_length + custserv_calls + total_charges'
+from statsmodels.formula.api import ols, glm, logit
+
+
+print("========================================================== 표준화 되기 전 ==========================================================")
+# 원래 기존의 코드 (표준화 안된 코드)
+# Fit a logistic regression model
 dependent_variable = churn['churn01']
 independent_variables = churn[['account_length', 'custserv_calls', 'total_charges']]
 independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
 #logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 print(logit_model.summary())
+print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
+print("\nCoefficients:\n%s" % logit_model.params)
+print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
+#logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
+#print(logit_marginal_effects.summary())
+
+
+print("========================================================== 표준화 전 전처리 작업 ==========================================================")
+lm = logit(my_formula, data=churn).fit()
+print(lm.summary())
+
+# 계수 출력 함수
+print("\nCoefficients:\n%s" % lm.params)
+# 계수 오류 출력
+print("\nCoefficient Std Errors:\n%s" % lm.bse)
+
+print("========================================================== 표준화 작업 ==========================================================")
+
+dependent_variable = churn['churn01']
+independent_variables = churn[churn.columns.difference(['churn01', 'alcohol', 'sugar'])]
+independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
+wine_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
+logit_model = logit(my_formula, data=wine_standardized).fit()
+
+print(wine_standardized.describe())
+
+print(logit_model.summary())
+
+
+
+
+print ("========================================================== 라이브러리를 사용한 표준화 작업 ==========================================================")
+from sklearn.preprocessing import StandardScaler
+standardScaler = StandardScaler()
+
+
+
+
+
+
 '''
 print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
 print("\nCoefficients:\n%s" % logit_model.params)
@@ -96,18 +146,22 @@ print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 #logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
 #print(logit_marginal_effects.summary())
 '''
+print("======================================= 로지스틱 함수 식 =======================================")
 print("\ninvlogit(-7.2205 + 0.0012*mean(account_length) + 0.4443*mean(custserv_calls) + 0.0729*mean(total_charges))")
 
+
+# Fit Standardized 
 def inverse_logit(model_formula):
 	from math import exp
-	return (1.0 / (1.0 + exp(-model_formula)))*100.0
+	return (1.0 / (1.0 + exp(-model_formula))) * 100
 
 at_means = float(logit_model.params[0]) + \
 	float(logit_model.params[1])*float(churn['account_length'].mean()) + \
 	float(logit_model.params[2])*float(churn['custserv_calls'].mean()) + \
 	float(logit_model.params[3])*float(churn['total_charges'].mean())
 
-print("평균값을 넣어보자")
+print("")
+print("======================================= 평균값 계산 =======================================")
 print(churn['account_length'].mean())
 print(churn['custserv_calls'].mean())
 print(churn['total_charges'].mean())
@@ -129,6 +183,7 @@ print(churn['custserv_calls'].mean()-1.0)
 print(cust_serv_mean_minus_one)
 print("Probability of churn when account length changes by 1: %.2f" % (inverse_logit(cust_serv_mean) - inverse_logit(cust_serv_mean_minus_one)))
 
+
 # Predict churn for "new" observations
 print("======================================= 값 예측하기 =============================================")
 new_observations = churn.loc[churn.index.isin(range(10)), independent_variables.columns]
@@ -137,22 +192,42 @@ y_predicted = logit_model.predict(new_observations_with_constant)
 y_predicted_rounded = [round(score, 2) for score in y_predicted]
 print(y_predicted_rounded)
 
-'''
-# Fit a logistic regression model
+
+
+
+# Fit a logistic regression mode
+
 output_variable = churn['churn01']
 vars_to_keep = churn[['account_length', 'custserv_calls', 'total_charges']]
 inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
 input_variables = sm.add_constant(inputs_standardized, prepend=False)
 logit_model = sm.Logit(output_variable, input_variables).fit()
-#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
+
+#표준화 진행 해야됨. 
+from sklearn.preprocessing import StandardScaler
+'''
+표준화 도와주는 라이브러리
+1순위 어떤 값이 종속변수의 값에 영향을 많이 주는 지 파악하기
+2순위 그 중에서 표준편차가 큰 값 파악하기
+3순위 
+
+
+'''
+
+
+
+
+
+
+
+# logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 print(logit_model.summary())
 print(logit_model.params)
 print(logit_model.bse)
-#logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
-#print(logit_marginal_effects.summary())
+logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
+print(logit_marginal_effects.summary())
 
 # Predict output value for a new observation based on its mean standardized input values
 input_variables = [0., 0., 0., 1.]
 predicted_value = logit_model.predict(input_variables)
-print("Predicted value: %.5f") % predicted_value
-'''
+print("Predicted value: %f", predicted_value) 
