@@ -6,6 +6,13 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
+# 로지스틱 회귀 분석 모델
+# churn 부분 True와 False로 구성되어 있음
+# 새로운 churn01 컬럼 부분 생성 0.과 1.의 부분으로 구성되어 
+# 1. == True z > 0 (양성 || 고객 이탈)
+# 0. == False z < 0 (음성 || 고객 잔류)
+# z == 0 (로지스틱 중간값 0.5 해당)
+
 # Read the data set into a pandas DataFrame
 churn = pd.read_csv('churn.csv', sep=',', header=0)
 
@@ -106,7 +113,7 @@ print(churn['custserv_calls'].mean())
 print(churn['total_charges'].mean())
 print(at_means)
 print("Probability of churn when independent variables are at their mean values: %.2f" % inverse_logit(at_means))
-'''
+
 cust_serv_mean = float(logit_model.params[0]) + \
 	float(logit_model.params[1])*float(churn['account_length'].mean()) + \
 	float(logit_model.params[2])*float(churn['custserv_calls'].mean()) + \
@@ -123,12 +130,14 @@ print(cust_serv_mean_minus_one)
 print("Probability of churn when account length changes by 1: %.2f" % (inverse_logit(cust_serv_mean) - inverse_logit(cust_serv_mean_minus_one)))
 
 # Predict churn for "new" observations
+print("======================================= 값 예측하기 =============================================")
 new_observations = churn.loc[churn.index.isin(range(10)), independent_variables.columns]
 new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
 y_predicted = logit_model.predict(new_observations_with_constant)
 y_predicted_rounded = [round(score, 2) for score in y_predicted]
 print(y_predicted_rounded)
 
+'''
 # Fit a logistic regression model
 output_variable = churn['churn01']
 vars_to_keep = churn[['account_length', 'custserv_calls', 'total_charges']]
