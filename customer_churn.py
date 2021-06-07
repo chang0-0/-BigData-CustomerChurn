@@ -96,12 +96,15 @@ print("========================================================== 표준화 되�
 dependent_variable = churn['churn01']
 independent_variables = churn[['account_length', 'custserv_calls', 'total_charges']]
 independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
+print(independent_variables_with_constant)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
-#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 print(logit_model.summary())
 print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
 print("\nCoefficients:\n%s" % logit_model.params)
 print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
+
+
+#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 #logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
 #print(logit_marginal_effects.summary())
 
@@ -118,24 +121,24 @@ print("\nCoefficient Std Errors:\n%s" % lm.bse)
 print("========================================================== 표준화 작업 ==========================================================")
 
 dependent_variable = churn['churn01']
-independent_variables = churn[churn.columns.difference(['churn01', 'alcohol', 'sugar'])]
+# difference 오류.
+independent_variables = churn[churn.columns.difference(['churn01'])]
 independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
-wine_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
-logit_model = logit(my_formula, data=wine_standardized).fit()
+customer_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
+logit_model = logit(my_formula, data=customer_standardized).fit()
 
-print(wine_standardized.describe())
-
+print(customer_standardized.describe())
 print(logit_model.summary())
 
-
+# 계수 출력 함수
+print("\nCoefficients:\n%s" % logit_model.params)
+# 계수 오류 출력
+print("\nCoefficient Std Errors:\n%s" % lm.bse)
 
 
 print ("========================================================== 라이브러리를 사용한 표준화 작업 ==========================================================")
 from sklearn.preprocessing import StandardScaler
 standardScaler = StandardScaler()
-
-
-
 
 
 
@@ -193,10 +196,8 @@ y_predicted_rounded = [round(score, 2) for score in y_predicted]
 print(y_predicted_rounded)
 
 
-
-
 # Fit a logistic regression mode
-
+''''이거 표준화 아니라고 함.'''
 output_variable = churn['churn01']
 vars_to_keep = churn[['account_length', 'custserv_calls', 'total_charges']]
 inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
@@ -211,14 +212,7 @@ from sklearn.preprocessing import StandardScaler
 2순위 그 중에서 표준편차가 큰 값 파악하기
 3순위 
 
-
 '''
-
-
-
-
-
-
 
 # logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 print(logit_model.summary())
