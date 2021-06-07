@@ -93,15 +93,49 @@ from statsmodels.formula.api import ols, glm, logit
 print("========================================================== 표준화 되기 전 ==========================================================")
 # 원래 기존의 코드 (표준화 안된 코드)
 # Fit a logistic regression model
+
+# 로지스틱 하기전에 라이브러리를 통해서 전체 데이터 표준화 작업 진행
+
+
+
 dependent_variable = churn['churn01']
 independent_variables = churn[['account_length', 'custserv_calls', 'total_charges']]
 independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
 print(independent_variables_with_constant)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
 print(logit_model.summary())
-print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
+# print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
 print("\nCoefficients:\n%s" % logit_model.params)
 print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
+
+# 결과 값 테스트 중 상수항을 넣지 않고 테스트 결과
+# 상수항을 넣으면 회귀분석에서 좋다고 하는데, 결과가 변하지 않고 그대로 출력해도 상관없는듯
+
+print("========================================================== 라이브러리 사용 테스트 ========================================================== ")
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+# 라이브러리 사용할거면 여기서 부터 진행하면 됨.
+scaler.fit(independent_variables_with_constant)
+
+independent_variables_with_constant = scaler.transform(independent_variables_with_constant)
+
+independent_variables_standardized = scaler.transform(independent_variables_with_constant)
+
+print(independent_variables_standardized)
+
+logit_model = sm.Logit(dependent_variable, independent_variables_standardized).fit()
+print(logit_model.summary())
+
+
+#합쳐서 변수에 저장함. 종속변수와 표준화 된 값. axis=1으로 하나로 합해서 합침
+
+
+#여기 까지가 표준화 된 값 출력.
+logit_model = logit(independent_variables_standardized, data=churn).fit()
+print(logit_model)
+
+
+
 
 
 #logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
@@ -120,12 +154,29 @@ print("\nCoefficient Std Errors:\n%s" % lm.bse)
 
 print("========================================================== 표준화 작업 ==========================================================")
 
+# 표준화 작업 시작. 
+# 종속 변수 지정 dependent_var = churn01 열 지정
 dependent_variable = churn['churn01']
-# difference 오류.
+# independent_var = churn01을 제외한 나머지 열 모두 지정.
 independent_variables = churn[churn.columns.difference(['churn01'])]
+
+
+
+
+
+
+# 표준화 공식 적용 (종속변수 - 평균값) / 표준 편차 = 표준화 z-score.
 independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
+
+#합쳐서 변수에 저장함. 종속변수와 표준화 된 값. axis=1으로 하나로 합해서 합침
 customer_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
+
+#여기 까지가 표준화 된 값 출력.
 logit_model = logit(my_formula, data=customer_standardized).fit()
+
+
+
+
 
 print(customer_standardized.describe())
 print(logit_model.summary())
@@ -137,8 +188,6 @@ print("\nCoefficient Std Errors:\n%s" % lm.bse)
 
 
 print ("========================================================== 라이브러리를 사용한 표준화 작업 ==========================================================")
-from sklearn.preprocessing import StandardScaler
-standardScaler = StandardScaler()
 
 
 
