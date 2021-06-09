@@ -97,8 +97,14 @@ print("========================================================== 표준화 되�
 dependent_variable = churn['churn01']
 independent_variables = churn[['account_length', 'custserv_calls', 'total_charges']]
 independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
+
+print("상수항 추가 계수 테스트")
+print(independent_variables_with_constant)
+
 print(independent_variables_with_constant)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
+
+print("여기서는 결과 값 constant 출력")
 print(logit_model.summary())
 # print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
 print("\nCoefficients:\n%s" % logit_model.params)
@@ -107,40 +113,9 @@ print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 # 결과 값 테스트 중 상수항을 넣지 않고 테스트 결과
 # 상수항을 넣으면 회귀분석에서 좋다고 하는데, 결과가 변하지 않고 그대로 출력해도 상관없는듯
 
-# print("========================================================== 라이브러리 사용 테스트 ========================================================== ")
-# from sklearn.preprocessing import StandardScaler
-# scaler = StandardScaler()
-# # 라이브러리 사용할거면 여기서 부터 진행하면 됨.
-# scaler.fit(independent_variables_with_constant)
-
-# independent_variables_with_constant = scaler.transform(independent_variables_with_constant)
-
-# independent_variables_standardized = scaler.transform(independent_variables_with_constant)
-
-# print(independent_variables_standardized)
-
-# logit_model = sm.Logit(dependent_variable, independent_variables_standardized).fit()
-# print(logit_model.summary())
-
-
-# #합쳐서 변수에 저장함. 종속변수와 표준화 된 값. axis=1으로 하나로 합해서 합침
-
-
-# #여기 까지가 표준화 된 값 출력.
-# logit_model = logit(independent_variables_standardized, data=churn).fit()
-# print(logit_model)
-
-
-
-
-
-#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
-#logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
-#print(logit_marginal_effects.summary())
-
-
 print("========================================================== 표준화 전 전처리 작업 ==========================================================")
 lm = logit(my_formula, data=churn).fit()
+print("여기서 Intercept 값 출력되서 나옴")
 print(lm.summary())
 
 # 계수 출력 함수
@@ -200,8 +175,7 @@ at_means = float(logit_model.params[0]) + \
 	float(logit_model.params[2])*float(churn['custserv_calls'].mean()) + \
 	float(logit_model.params[3])*float(churn['total_charges'].mean())
 
-print("")
-print("======================================= 평균값 계산 =======================================")
+
 print(churn['account_length'].mean())
 print(churn['custserv_calls'].mean())
 print(churn['total_charges'].mean())
@@ -262,3 +236,22 @@ print(logit_marginal_effects.summary())
 input_variables = [0., 0., 0., 1.]
 predicted_value = logit_model.predict(input_variables)
 print(("Predicted value: %.5f") % predicted_value)
+
+
+# print("========================================================== 라이브러리 사용 테스트 116번 라인에 추가. ========================================================== ")
+# from sklearn.preprocessing import StandardScaler
+# scaler = StandardScaler()
+# # 라이브러리 사용할거면 여기서 부터 진행하면 됨.
+# scaler.fit(independent_variables_with_constant)
+# independent_variables_with_constant = scaler.transform(independent_variables_with_constant)
+# independent_variables_standardized = scaler.transform(independent_variables_with_constant)
+# print(independent_variables_standardized)
+# logit_model = sm.Logit(dependent_variable, independent_variables_standardized).fit()
+# print(logit_model.summary())
+# #합쳐서 변수에 저장함. 종속변수와 표준화 된 값. axis=1으로 하나로 합해서 합침
+# #여기 까지가 표준화 된 값 출력.
+# logit_model = logit(independent_variables_standardized, data=churn).fit()
+# print(logit_model)
+#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
+#logit_marginal_effects = logit_model.get_margeff(method='dydx', at='overall')
+#print(logit_marginal_effects.summary())
