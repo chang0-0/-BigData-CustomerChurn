@@ -93,19 +93,26 @@ print("========================================================== 표준화 되�
 
 # 로지스틱 하기전에 라이브러리를 통해서 전체 데이터 표준화 작업 진행
 
-
 dependent_variable = churn['churn01']
 independent_variables = churn[['account_length', 'custserv_calls', 'total_charges']]
+print(churn.info())
+
+independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
+print("표준화 값 테스트")
+
+print(independent_variables)
+print(independent_variables_standardized)
+
+# 상수항 추가
 independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
 
 print("상수항 추가 계수 테스트")
 print(independent_variables_with_constant)
-
-print(independent_variables_with_constant)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
 
-print("여기서는 결과 값 constant 출력")
+print("여기서는 결과 값 constant 출력(표준화 상수항 추가)")
 print(logit_model.summary())
+
 # print("\nQuantities you can extract from the result:\n%s" % dir(logit_model))
 print("\nCoefficients:\n%s" % logit_model.params)
 print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
@@ -115,7 +122,7 @@ print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 
 print("========================================================== 표준화 전 전처리 작업 ==========================================================")
 lm = logit(my_formula, data=churn).fit()
-print("여기서 Intercept 값 출력되서 나옴")
+print("여기서 Intercept 값 출력되서 나옴(logit인데 formula 식 적용값)")
 print(lm.summary())
 
 # 계수 출력 함수
@@ -163,7 +170,10 @@ print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 '''
 print("======================================= 로지스틱 함수 식 =======================================")
 print("\ninvlogit(-7.2205 + 0.0012*mean(account_length) + 0.4443*mean(custserv_calls) + 0.0729*mean(total_charges))")
-
+# 일반화된 선형 모델로 표현된 것과 이 공식화가 정확히 동등함이 알려져 있다. 
+# 이는 표준 로지스틱 분포의 누적 분포 함수가 로지스틱 함수, 
+# 즉, 로짓 함수의 역함수라는 사실을 이용하여 다음과 같이 나타낼 수 있다. 다시 말해,
+# 역함수는 시그모이드 함수
 
 # Fit Standardized 
 def inverse_logit(model_formula):
